@@ -194,6 +194,49 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
 
+### 3. ติดตั้ง Swagger (สำหรับ RESTful API Documentation)
+Swagger ช่วยสร้าง API Documentation แบบ Interactive UI อัตโนมัติจาก comments ใน code
+
+#### a. ติดตั้ง Swag CLI
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest
+```
+
+#### b. ติดตั้ง Dependencies ใน Project
+```bash
+cd Gin_framework/api
+go get -u github.com/swaggo/gin-swagger
+go get -u github.com/swaggo/files
+```
+
+#### c. Generate Swagger Docs
+หลังจากเพิ่ม annotations ใน code แล้ว ให้รันคำสั่ง:
+```bash
+cd Gin_framework/api/RESTful-API
+swag init -o ../../docs
+```
+คำสั่งนี้จะสร้างโฟลเดอร์ `Gin_framework/docs/` ที่มีไฟล์:
+- `docs.go` - Go code สำหรับ import
+- `swagger.json` - API spec ในรูปแบบ JSON
+- `swagger.yaml` - API spec ในรูปแบบ YAML
+
+#### d. Swagger Annotations ที่ใช้
+```go
+// @title Album API
+// @version 1.0
+// @description RESTful API สำหรับจัดการข้อมูล Albums
+// @host localhost:8082
+// @BasePath /
+
+// @Summary Get all albums
+// @Description ดึงรายการ albums ทั้งหมด
+// @Tags albums
+// @Produce json
+// @Success 200 {array} Album
+// @Router /albums [get]
+func getAlbums(c *gin.Context) { ... }
+```
+
 ---
 
 ## 💡 How to Run
@@ -222,13 +265,87 @@ go mod tidy
 ```bash
 go run RESTful-API/main.go
 ```
-- **ทดสอบ:** เปิด Browser หรือ Postman ไปที่ `http://localhost:8080/albums`
+Server จะรันที่ port **8082**
+
+**Endpoints ที่ใช้งานได้:**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Welcome message |
+| GET | `/albums` | ดึงรายการ albums ทั้งหมด |
+| GET | `/albums/:id` | ดึง album ตาม ID |
+| POST | `/albums` | เพิ่ม album ใหม่ |
+
+- **ทดสอบ:** เปิด Browser หรือ Postman ไปที่ `http://localhost:8082/albums`
+
+**ตัวอย่างการทดสอบด้วย curl:**
+```bash
+# GET all albums
+curl http://localhost:8082/albums
+
+# GET album by ID
+curl http://localhost:8082/albums/1
+
+# POST new album
+curl -X POST http://localhost:8082/albums \
+  -H "Content-Type: application/json" \
+  -d '{"id":"4","title":"Giant Steps","artist":"John Coltrane","price":49.99}'
+```
+
+> 🚀 **Auto-open:** Swagger UI จะเปิดอัตโนมัติที่ `http://localhost:8082/swagger/index.html`
 
 #### b. รัน GraphQL API
 ```bash
 go run GraphQL/main.go
 ```
-- **ทดสอบ:** เปิด Browser ไปที่ `http://localhost:8081/graphql` เพื่อใช้งาน GraphiQL interface
+Server จะรันที่ port **8081**
+
+**Features:**
+- 📝 **GraphiQL Interface** - Interactive UI สำหรับทดสอบ GraphQL queries
+- 🔄 **Auto-complete** - ช่วยเขียน query
+- 📖 **Documentation Explorer** - ดู schema และ types
+
+**Available Queries:**
+| Query | Description | Example |
+|-------|-------------|---------|
+| `hello` | Simple hello world | `{ hello }` |
+| `books` | ดึงหนังสือทั้งหมด | `{ books { id title author year } }` |
+| `book(id)` | ดึงหนังสือตาม ID | `{ book(id: 1) { title author } }` |
+| `users` | ดึง users ทั้งหมด | `{ users { id name email } }` |
+| `user(id)` | ดึง user ตาม ID | `{ user(id: 1) { name email age } }` |
+| `booksByAuthor(author)` | ค้นหาหนังสือตามผู้แต่ง | `{ booksByAuthor(author: "Alan Donovan") { title } }` |
+
+**ตัวอย่าง Query:**
+```graphql
+# Simple query
+{ hello }
+
+# Get all books
+{ 
+  books { 
+    id 
+    title 
+    author 
+    year 
+  } 
+}
+
+# Get specific book by ID
+{ 
+  book(id: 1) { 
+    title 
+    author 
+  } 
+}
+
+# Multiple queries at once (GraphQL power!)
+{
+  hello
+  books { title }
+  user(id: 1) { name }
+}
+```
+
+> 🚀 **Auto-open:** GraphiQL จะเปิดอัตโนมัติที่ `http://localhost:8081/graphql`
 
 #### c. รัน Microservices (gRPC)
 ต้องเปิด Terminal 2 หน้าต่าง:
@@ -237,10 +354,104 @@ go run GraphQL/main.go
 ```bash
 go run Microservices-gRPC/server/main.go
 ```
+Server จะรันที่ port **50051** (gRPC protocol)
 
 **Terminal 2 (รัน Client):**
 ```bash
 go run Microservices-gRPC/client/main.go
 ```
+
+**Service ที่ใช้งานได้:**
+| Service | Method | Request | Response |
+|---------|--------|---------|----------|
+| Greeter | SayHello | `HelloRequest { name }` | `HelloReply { message }` |
+
+> ⚠️ **หมายเหตุ:** gRPC ใช้ Protocol Buffers (Binary) ไม่ใช่ HTTP/REST ดังนั้นไม่สามารถทดสอบผ่าน Browser ได้โดยตรง ต้องใช้ gRPC client หรือเครื่องมือเช่น [grpcurl](https://github.com/fullstorydev/grpcurl), [BloomRPC](https://github.com/bloomrpc/bloomrpc)
+
+---
+
+## 🎯 API Documentation Summary
+
+> **Auto-open** หมายถึง เมื่อรัน server แล้ว browser จะเปิด UI สำหรับทดสอบ API โดยอัตโนมัติ
+
+| API Type | Port | UI/Docs | Auto-open | วิธีทดสอบ |
+|----------|------|---------|-----------|-----------|
+| RESTful API | 8082 | Swagger UI | ✅ เปิดอัตโนมัติ | Browser: `/swagger/index.html` |
+| GraphQL | 8081 | GraphiQL | ✅ เปิดอัตโนมัติ | Browser: `/graphql` |
+| gRPC | 50051 | ไม่มี (Binary) | ❌ ไม่รองรับ | ต้องรัน client หรือใช้ grpcurl |
+
+**หมายเหตุ gRPC:**
+- gRPC ใช้ **Protocol Buffers (Binary)** ไม่ใช่ HTTP/REST ดังนั้นไม่สามารถเปิดใน Browser ได้
+- ต้องทดสอบผ่าน: `go run ./Microservices-gRPC/client/main.go` หรือใช้เครื่องมือเช่น [grpcurl](https://github.com/fullstorydev/grpcurl)
+
+---
+
+## 🐳 gRPC + Docker + Kubernetes (Production)
+
+สำหรับ Production แนะนำใช้ **Docker** และ **Kubernetes** ร่วมกับ gRPC
+
+### ทำไม gRPC ถึงเหมาะกับ Docker & K8s?
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Kubernetes Cluster                    │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐  │
+│  │ gRPC Svc A  │───▶│ gRPC Svc B  │───▶│ gRPC Svc C  │  │
+│  │  (Pod x3)   │    │  (Pod x5)   │    │  (Pod x2)   │  │
+│  └─────────────┘    └─────────────┘    └─────────────┘  │
+│         │                  │                  │          │
+│         └──────────────────┴──────────────────┘          │
+│                    K8s DNS / Service                     │
+└─────────────────────────────────────────────────────────┘
+```
+
+### ข้อดีของ gRPC + Docker + K8s
+
+| Feature | ประโยชน์ |
+|---------|----------|
+| **Service Discovery** | K8s DNS ช่วยให้ services หากันเจอ (ไม่ต้อง hardcode IP) |
+| **Health Checks** | gRPC มี health check protocol, K8s ใช้ได้เลย |
+| **Horizontal Scaling** | เพิ่ม replicas ได้ง่ายตาม load |
+| **Load Balancing** | Client-side (gRPC built-in) หรือ Server-side (K8s Service) |
+| **Service Mesh** | Istio/Linkerd รองรับ gRPC native + mTLS |
+| **Zero-downtime Deploy** | Rolling updates ไม่กระทบ connection |
+
+### เมื่อไหร่ควรใช้?
+
+| Scenario | แนะนำ |
+|----------|-------|
+| 🎓 Learning / Development | Local ได้เลย (ไม่ต้อง Docker/K8s) |
+| 🏠 Small project (1-3 services) | Docker Compose พอ |
+| 🏢 Medium project (3-10 services) | Docker + K8s เริ่มคุ้มค่า |
+| 🏭 Large scale / Production | Docker + K8s + Service Mesh จำเป็นมาก |
+
+### Production Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                        Production                             │
+│   ┌─────────┐     ┌─────────────────────────────────────┐    │
+│   │ Client  │────▶│          Ingress / Gateway          │    │
+│   └─────────┘     └─────────────────────────────────────┘    │
+│                              │                                │
+│                    ┌─────────┴─────────┐                     │
+│                    ▼                   ▼                     │
+│            ┌─────────────┐     ┌─────────────┐               │
+│            │  REST API   │     │  GraphQL    │  ← Public     │
+│            │  (Gateway)  │     │  (Gateway)  │               │
+│            └──────┬──────┘     └──────┬──────┘               │
+│                   │                   │                      │
+│         ┌─────────┴───────────────────┴─────────┐            │
+│         ▼                   ▼                   ▼            │
+│   ┌───────────┐      ┌───────────┐      ┌───────────┐       │
+│   │ User Svc  │◀────▶│ Order Svc │◀────▶│Payment Svc│       │
+│   │  (gRPC)   │      │  (gRPC)   │      │  (gRPC)   │       │
+│   └───────────┘      └───────────┘      └───────────┘       │
+│                    Internal gRPC calls ← Private             │
+└──────────────────────────────────────────────────────────────┘
+```
+
+> 💡 **Pattern:** ใช้ REST/GraphQL เป็น Public API Gateway และใช้ gRPC สำหรับ Internal communication ระหว่าง Microservices
+
 ---
 ## 💕 ขอให้สนุกกับการเรียนรู้ Golang! 💕

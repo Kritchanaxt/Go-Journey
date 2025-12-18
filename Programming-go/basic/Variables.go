@@ -4,13 +4,13 @@ import "fmt"
 
 func main() {
 	// Manual Declaration
-	var name string = "Bak Wave"
+	var name string = "Bak Got"
 	var age int = 25
 	var salary float64 = 50000.50
 	var isActive bool = true
 
 	// Type Inference
-	city := "Nong Bua Lamphu"
+	city := "Udon Thani"
 	score := 95.5
 
 	// Multiple Variables

@@ -1,0 +1,92 @@
+basePath: /
+definitions:
+  main.Album:
+    properties:
+      artist:
+        example: John Coltrane
+        type: string
+      id:
+        example: "1"
+        type: string
+      price:
+        example: 56.99
+        type: number
+      title:
+        example: Blue Train
+        type: string
+    type: object
+host: localhost:8082
+info:
+  contact: {}
+  description: RESTful API สำหรับจัดการข้อมูล Albums
+  title: Album API
+  version: "1.0"
+paths:
+  /albums:
+    get:
+      description: ดึงรายการ albums ทั้งหมด
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Album'
+            type: array
+      summary: Get all albums
+      tags:
+      - albums
+    post:
+      consumes:
+      - application/json
+      description: เพิ่ม album ใหม่
+      parameters:
+      - description: Album data
+        in: body
+        name: album
+        required: true
+        schema:
+          $ref: '#/definitions/main.Album'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.Album'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new album
+      tags:
+      - albums
+  /albums/{id}:
+    get:
+      description: ดึง album ตาม ID
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Album'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get album by ID
+      tags:
+      - albums
+swagger: "2.0"
